@@ -17,7 +17,7 @@ def is_pdf(message):
         return False
 
 @run_async
-def send_pdf_preview(self, bot, update):
+def send_pdf_preview(bot, update):
     logger.info("Attempting to upload photo")
     from pprint import pprint
     pprint(update.message)
