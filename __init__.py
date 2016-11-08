@@ -34,7 +34,11 @@ def send_pdf_preview(bot, update):
             pdf_file.name
         ])
 
-    update.message.reply_photo(png_file_bytes)
+    # TODO consider if I even need the temporary png file
+    with tempfile.NamedTemporaryFile(suffix=".png") as png_file:
+        png_file.write(png_file_bytes)
+        png_file.seek(0)
+        update.message.reply_photo(png_file)
 
 class PdfPreviewBeard(Beard):
 
