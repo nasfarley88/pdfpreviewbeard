@@ -22,6 +22,8 @@ class PdfPreviewBeard(telepot.aio.helper.ChatHandler, BeardAsyncChatHandlerMixin
         super().__init__(*args, **kwargs)
         self.register_command(is_pdf, self.send_pdf_preview)
 
+    __userhelp__ = """Automatically produces the first page of a pdf as an image."""
+
     async def send_pdf_preview(self, msg):
         logger.info("Attempting to upload photo")
         file_id = msg["document"]["file_id"]
@@ -42,8 +44,3 @@ class PdfPreviewBeard(telepot.aio.helper.ChatHandler, BeardAsyncChatHandlerMixin
             png_file.seek(0)
             sp.check_call("cp {} ~/tmp/".format(png_file.name), shell=True)
             await self.sender.sendPhoto(open(png_file.name, "rb"))
-
-    # async def on_chat_message(self, msg):
-    #     if is_pdf(msg):
-    #         print("hello world")
-    #         await self.send_pdf_preview(msg)
