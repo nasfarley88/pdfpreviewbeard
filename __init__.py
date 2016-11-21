@@ -3,52 +3,47 @@ import subprocess as sp
 import logging
 import re
 
-from telegram.ext import MessageHandler, Filters, CommandHandler
-from telegram.ext.dispatcher import run_async
-from skybeard.beards import Beard
+import telepot
+import telepot.aio
+from skybeard.beards import BeardAsyncChatHandlerMixin
 
 logger = logging.getLogger(__name__)
 
 
 def is_pdf(message):
     try:
-        return re.match(r".*\.pdf$", message.document.file_name)
-    except AttributeError:
+        return re.match(r".*\.pdf$", message["document"]["file_name"])
+    except KeyError:
         return False
 
-@run_async
-def send_pdf_preview(bot, update):
-    logger.info("Attempting to upload photo")
-    from pprint import pprint
-    pprint(update.message)
-    file_id = update.message.document.file_id
-    logger.info("Getting file from telegram")
-    pdf_tg_file = bot.getFile(file_id)
+class PdfPreviewBeard(telepot.aio.helper.ChatHandler, BeardAsyncChatHandlerMixin):
 
-    with tempfile.NamedTemporaryFile(suffix=".pdf") as pdf_file:
-        pdf_tg_file.download(pdf_file.name)
-        png_file_bytes = sp.check_output([
-            "/bin/pdftoppm",
-            "-singlefile",
-            "-png",
-            pdf_file.name
-        ])
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.register_command(is_pdf, self.send_pdf_preview)
 
-    # TODO consider if I even need the temporary png file
-    with tempfile.NamedTemporaryFile(suffix=".png") as png_file:
-        png_file.write(png_file_bytes)
-        png_file.seek(0)
-        update.message.reply_photo(png_file)
+    async def send_pdf_preview(self, msg):
+        logger.info("Attempting to upload photo")
+        file_id = msg["document"]["file_id"]
+        logger.info("Getting file from telegram")
 
-class PdfPreviewBeard(Beard):
+        with tempfile.NamedTemporaryFile(suffix=".pdf") as pdf_file:
+            # pdf_tg_file.download(pdf_file.name)
+            await self._bot.download_file(file_id, pdf_file.file)
+            png_file_bytes = sp.check_output([
+                "/bin/pdftoppm",
+                "-singlefile",
+                "-png",
+                pdf_file.name
+            ])
 
-    def initialise(self):
-        self.disp.add_handler(CommandHandler("pdfpreviewhelp", self.help))
-        self.disp.add_handler(MessageHandler(is_pdf, send_pdf_preview))
+        with tempfile.NamedTemporaryFile(suffix=".png") as png_file:
+            png_file.write(png_file_bytes)
+            png_file.seek(0)
+            sp.check_call("cp {} ~/tmp/".format(png_file.name), shell=True)
+            await self.sender.sendPhoto(open(png_file.name, "rb"))
 
-    def help(self, bot, update):
-        update.message.reply_text(
-            """TL;DR This beard shows you the first page of any pdfs it sees."""
-        )
-
-
+    # async def on_chat_message(self, msg):
+    #     if is_pdf(msg):
+    #         print("hello world")
+    #         await self.send_pdf_preview(msg)
