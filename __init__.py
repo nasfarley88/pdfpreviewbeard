@@ -5,7 +5,7 @@ import re
 
 import telepot
 import telepot.aio
-from skybeard.beards import BeardAsyncChatHandlerMixin
+from skybeard.beards import BeardChatHandler
 
 logger = logging.getLogger(__name__)
 
@@ -16,18 +16,24 @@ def is_pdf(message):
     except KeyError:
         return False
 
-class PdfPreviewBeard(telepot.aio.helper.ChatHandler, BeardAsyncChatHandlerMixin):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.register_command(is_pdf, self.send_pdf_preview)
+class PdfPreviewBeard(BeardChatHandler):
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self.register_command(is_pdf, self.send_pdf_preview)
 
     __userhelp__ = """Automatically produces the first page of a pdf as an image."""
+
+    __commands__ = [
+        (is_pdf, 'send_pdf_preview', None)
+    ]
 
     async def send_pdf_preview(self, msg):
         logger.info("Attempting to upload photo")
         file_id = msg["document"]["file_id"]
         logger.info("Getting file from telegram")
+        await self.sender.sendChatAction('upload_photo')
 
         with tempfile.NamedTemporaryFile(suffix=".pdf") as pdf_file:
             # pdf_tg_file.download(pdf_file.name)
