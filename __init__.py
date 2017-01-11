@@ -48,6 +48,7 @@ class PdfPreviewBeard(BeardChatHandler):
             except FileNotFoundError:
                 await self.sender.sendMessage(
                     "pdftppm not found! Please install pdftoppm on the host machine for this bot.")
+                return
 
         with tempfile.NamedTemporaryFile(suffix=".png") as png_file:
             png_file.write(png_file_bytes)
