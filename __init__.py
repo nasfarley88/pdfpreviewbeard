@@ -38,12 +38,16 @@ class PdfPreviewBeard(BeardChatHandler):
         with tempfile.NamedTemporaryFile(suffix=".pdf") as pdf_file:
             # pdf_tg_file.download(pdf_file.name)
             await self._bot.download_file(file_id, pdf_file.file)
-            png_file_bytes = sp.check_output([
-                "/bin/pdftoppm",
-                "-singlefile",
-                "-png",
-                pdf_file.name
-            ])
+            try:
+                png_file_bytes = sp.check_output([
+                    "/bin/pdftoppm",
+                    "-singlefile",
+                    "-png",
+                    pdf_file.name
+                ])
+            except FileNotFoundError:
+                await self.sender.sendMessage(
+                    "pdftppm not found! Please install pdftoppm on the host machine for this bot.")
 
         with tempfile.NamedTemporaryFile(suffix=".png") as png_file:
             png_file.write(png_file_bytes)
