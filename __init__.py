@@ -3,14 +3,13 @@ import subprocess as sp
 import logging
 import re
 
-import telepot
-import telepot.aio
 from skybeard.beards import BeardChatHandler
+from skybeard.decorators import onerror
 
 logger = logging.getLogger(__name__)
 
 
-def is_pdf(message):
+def is_pdf(bot, message):
     try:
         return re.match(r".*\.pdf$", message["document"]["file_name"])
     except KeyError:
@@ -19,16 +18,13 @@ def is_pdf(message):
 
 class PdfPreviewBeard(BeardChatHandler):
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.register_command(is_pdf, self.send_pdf_preview)
-
     __userhelp__ = """Automatically produces the first page of a pdf as an image."""
 
     __commands__ = [
         (is_pdf, 'send_pdf_preview', None)
     ]
 
+    @onerror
     async def send_pdf_preview(self, msg):
         logger.info("Attempting to upload photo")
         file_id = msg["document"]["file_id"]
