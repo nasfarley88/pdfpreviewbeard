@@ -2,6 +2,7 @@ import tempfile
 import subprocess as sp
 import logging
 import re
+from pathlib import Path
 
 from skybeard.beards import BeardChatHandler
 from skybeard.decorators import onerror
@@ -14,6 +15,15 @@ def is_pdf(bot, message):
         return re.match(r".*\.pdf$", message["document"]["file_name"])
     except KeyError:
         return False
+
+
+async def get_pdftoppm_path():
+    possible_paths = ["/bin/pdftoppm", "/usr/bin/pdftoppm"]
+    for path in possible_paths:
+        if Path(path).exists():
+            return path
+    else:
+        raise FileNotFoundError("pdftoppm cannot be found! Is it installed?")
 
 
 class PdfPreviewBeard(BeardChatHandler):
@@ -36,7 +46,7 @@ class PdfPreviewBeard(BeardChatHandler):
             await self._bot.download_file(file_id, pdf_file.file)
             try:
                 png_file_bytes = sp.check_output([
-                    "/bin/pdftoppm",
+                    await get_pdftoppm_path(),
                     "-singlefile",
                     "-png",
                     pdf_file.name
